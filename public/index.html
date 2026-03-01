@@ -3,11 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Email Signature Generator</title>
+    <title>Sigar - Free Email Signature Generator</title>
+    <meta
+      name="description"
+      content="Sigar is a free email signature generator with live preview, HTML export, and Google Drive image upload."
+    />
+    <link rel="icon" type="image/png" href="/assets/sigar-logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
@@ -17,7 +26,8 @@
     <main class="container">
       <header class="header">
         <div>
-          <h1>Email Signature Generator</h1>
+          <img src="/assets/sigar-logo.png" alt="Sigar logo" class="app-logo" />
+          <h1>Sigar</h1>
           <p class="subtext">
             Build, preview, and export an HTML email signature with cloud-hosted avatar and logo images.
           </p>
@@ -28,65 +38,65 @@
         <h2>Profile</h2>
         <form id="signature-form" class="form-grid">
           <label>
-            Full name
+            <span class="label-title">Full name</span>
             <input name="fullName" value="Alex Morgan" required />
           </label>
           <label>
-            Job title
+            <span class="label-title">Job title</span>
             <input name="jobTitle" value="Head of Product" />
           </label>
           <label>
-            Company
+            <span class="label-title">Company</span>
             <input name="company" value="Northwind Labs" />
           </label>
           <label>
-            Phone
+            <span class="label-title">Phone</span>
             <input name="phone" value="+1 (555) 019-9921" />
           </label>
           <label>
-            Email
+            <span class="label-title">Email</span>
             <input name="email" value="alex@northwindlabs.com" />
           </label>
           <label>
-            Website
+            <span class="label-title">Website</span>
             <input name="website" value="https://northwindlabs.com" />
           </label>
           <label class="wide">
-            Address
+            <span class="label-title">Address</span>
             <input name="address" value="310 Montgomery St, San Francisco, CA" />
           </label>
 
           <div class="section-divider"></div>
           <h3 class="section-title">Social Links</h3>
           <label>
-            LinkedIn
+            <span class="label-title">LinkedIn</span>
             <input name="linkedin" value="https://linkedin.com/in/alexmorgan" />
           </label>
           <label>
-            X / Twitter
+            <span class="label-title">X / Twitter</span>
             <input name="twitter" value="https://x.com/alexmorgan" />
           </label>
           <label>
-            Instagram
+            <span class="label-title">Instagram</span>
             <input name="instagram" value="https://instagram.com/alexmorgan" />
           </label>
           <label>
-            YouTube
+            <span class="label-title">YouTube</span>
             <input name="youtube" value="https://youtube.com/@alexmorgan" />
           </label>
 
           <div class="section-divider"></div>
           <h3 class="section-title">Branding</h3>
           <label>
-            Accent color
+            <span class="label-title">Accent color</span>
             <input type="color" name="accentColor" value="#2160ff" />
           </label>
           <label>
-            Avatar image URL
+            <span class="label-title">Avatar image URL</span>
             <input name="avatarUrl" placeholder="https://..." />
           </label>
           <label>
-            Logo image URL
+            <span class="label-title">Logo image URL</span>
             <input name="logoUrl" placeholder="https://..." />
           </label>
 
@@ -95,7 +105,7 @@
           <div class="upload-group wide">
             <div class="upload-item drive-connect">
               <div class="drive-head">
-                <label>Google Drive account</label>
+                <label><span class="label-title">Google Drive account</span></label>
                 <p id="drive-status" class="drive-status">Checking connection...</p>
               </div>
               <div class="drive-actions">
@@ -103,7 +113,7 @@
                 <button id="disconnect-drive" type="button">Disconnect</button>
               </div>
               <label>
-                Drive folder ID (optional)
+                <span class="label-title">Drive folder ID (optional)</span>
                 <input
                   name="driveFolderId"
                   placeholder="If empty, uploads go to user's My Drive root"
@@ -115,12 +125,12 @@
             <h3 class="upload-title">Uploads</h3>
 
             <div class="upload-item">
-              <label for="avatarUpload">Upload avatar to Google Drive</label>
+              <label for="avatarUpload"><span class="label-title">Upload avatar to Google Drive</span></label>
               <input id="avatarUpload" type="file" accept="image/*" />
               <button type="button" data-upload-target="avatarUrl">Upload avatar</button>
             </div>
             <div class="upload-item">
-              <label for="logoUpload">Upload logo to Google Drive</label>
+              <label for="logoUpload"><span class="label-title">Upload logo to Google Drive</span></label>
               <input id="logoUpload" type="file" accept="image/*" />
               <button type="button" data-upload-target="logoUrl">Upload logo</button>
             </div>
@@ -131,19 +141,24 @@
       <section class="panel preview-panel">
         <div class="preview-head">
           <h2>Preview</h2>
+          <button id="mobile-preview-toggle" type="button" class="mobile-preview-toggle" aria-expanded="false">
+            Expand
+          </button>
           <div class="actions">
             <button id="copy-html" type="button">Copy HTML</button>
+            <button id="copy-outlook" type="button">Copy for Outlook</button>
             <button id="download-html" type="button">Download HTML</button>
           </div>
         </div>
+        <div class="preview-content">
+          <div class="preview-card">
+            <div id="signature-preview"></div>
+          </div>
 
-        <div class="preview-card">
-          <div id="signature-preview"></div>
+          <label class="html-output-label" for="signature-html-output">Generated HTML</label>
+          <textarea id="signature-html-output" readonly></textarea>
+          <p id="status" class="status"></p>
         </div>
-
-        <label class="html-output-label" for="signature-html-output">Generated HTML</label>
-        <textarea id="signature-html-output" readonly></textarea>
-        <p id="status" class="status"></p>
       </section>
     </main>
 

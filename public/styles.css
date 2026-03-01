@@ -38,8 +38,15 @@ body {
   padding: 4px;
 }
 
+.app-logo {
+  width: 120px;
+  height: auto;
+  display: block;
+  margin-bottom: 8px;
+}
+
 h1 {
-  margin: 12px 0 8px;
+  margin: 0 0 8px;
   font-size: clamp(1.5rem, 4vw, 2.35rem);
   letter-spacing: -0.02em;
   font-weight: 400;
@@ -97,6 +104,12 @@ label {
   gap: 7px;
   font-weight: 400;
   font-size: 0.9rem;
+  opacity: 1;
+}
+
+.label-title {
+  font-size: 0.7rem;
+  opacity: 0.6;
 }
 
 .section-title {
@@ -228,6 +241,10 @@ button:active {
   gap: 12px;
 }
 
+.mobile-preview-toggle {
+  display: none;
+}
+
 .actions {
   display: flex;
   gap: 8px;
@@ -255,6 +272,19 @@ button:active {
   margin-top: 8px;
   min-height: 170px;
   resize: vertical;
+  font-family: 'Geist Mono', 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border: 1px solid #3b3b3b;
+  caret-color: #9cdcfe;
+  padding: 12px;
+}
+
+#signature-html-output:focus {
+  outline: 2px solid #3a7bd5;
+  border-color: #3a7bd5;
 }
 
 .status {
@@ -281,14 +311,42 @@ button:active {
 }
 
 @media (max-width: 800px) {
+  .container {
+    padding-bottom: 72px;
+  }
+
   .form-grid,
   .upload-group {
     grid-template-columns: 1fr;
   }
 
+  .preview-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    border-radius: 16px 16px 0 0;
+    max-height: 50vh;
+    overflow: auto;
+    box-shadow: 0 -10px 30px rgba(16, 24, 40, 0.16);
+  }
+
+  .preview-panel.is-collapsed {
+    max-height: none;
+    overflow: hidden;
+    padding-bottom: 14px;
+  }
+
+  .preview-panel.is-collapsed .preview-content,
+  .preview-panel.is-collapsed .actions {
+    display: none;
+  }
+
   .preview-head {
     align-items: flex-start;
-    flex-direction: column;
+    width: 100%;
+    flex-direction: row;
   }
 
   .actions {
@@ -297,5 +355,12 @@ button:active {
 
   .actions button {
     flex: 1;
+  }
+
+  .mobile-preview-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88px;
   }
 }

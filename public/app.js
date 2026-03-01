@@ -3,6 +3,7 @@ const preview = document.getElementById('signature-preview');
 const output = document.getElementById('signature-html-output');
 const statusEl = document.getElementById('status');
 const copyButton = document.getElementById('copy-html');
+const copyOutlookButton = document.getElementById('copy-outlook');
 const downloadButton = document.getElementById('download-html');
 const avatarUploadInput = document.getElementById('avatarUpload');
 const logoUploadInput = document.getElementById('logoUpload');
@@ -10,6 +11,10 @@ const uploadButtons = document.querySelectorAll('[data-upload-target]');
 const driveStatusEl = document.getElementById('drive-status');
 const connectDriveButton = document.getElementById('connect-drive');
 const disconnectDriveButton = document.getElementById('disconnect-drive');
+const previewPanel = document.querySelector('.preview-panel');
+const mobilePreviewToggle = document.getElementById('mobile-preview-toggle');
+const progressStorageKey = 'email_signature_progress_v1';
+const previewPanelStateKey = 'preview_panel_mobile_collapsed_v1';
 
 let driveConnected = false;
 
@@ -34,6 +39,77 @@ function normalizeUrl(url) {
 function getData() {
   const formData = new FormData(form);
   return Object.fromEntries(formData.entries());
+}
+
+function saveProgress() {
+  try {
+    const data = getData();
+    localStorage.setItem(progressStorageKey, JSON.stringify(data));
+  } catch (_error) {
+    // Ignore storage failures.
+  }
+}
+
+function restoreProgress() {
+  try {
+    const raw = localStorage.getItem(progressStorageKey);
+    if (!raw) return;
+
+    const saved = JSON.parse(raw);
+    if (!saved || typeof saved !== 'object') return;
+
+    Object.entries(saved).forEach(([name, value]) => {
+      const field = form.querySelector(`[name="${name}"]`);
+      if (!field) return;
+      if (field instanceof HTMLInputElement && field.type === 'file') return;
+      field.value = String(value ?? '');
+    });
+  } catch (_error) {
+    // Ignore invalid stored data.
+  }
+}
+
+function isMobileViewport() {
+  return window.matchMedia('(max-width: 800px)').matches;
+}
+
+function setPreviewCollapsed(collapsed) {
+  if (!previewPanel || !mobilePreviewToggle) return;
+  previewPanel.classList.toggle('is-collapsed', collapsed);
+  mobilePreviewToggle.textContent = collapsed ? 'Expand' : 'Collapse';
+  mobilePreviewToggle.setAttribute('aria-expanded', String(!collapsed));
+}
+
+function loadPreviewCollapsedPreference() {
+  try {
+    const raw = localStorage.getItem(previewPanelStateKey);
+    if (raw === null) return true;
+    return raw === 'true';
+  } catch (_error) {
+    return true;
+  }
+}
+
+function savePreviewCollapsedPreference(collapsed) {
+  try {
+    localStorage.setItem(previewPanelStateKey, String(collapsed));
+  } catch (_error) {
+    // Ignore storage failures.
+  }
+}
+
+function syncPreviewCollapseForViewport() {
+  if (!previewPanel || !mobilePreviewToggle) return;
+
+  if (!isMobileViewport()) {
+    previewPanel.classList.remove('is-collapsed');
+    mobilePreviewToggle.setAttribute('aria-expanded', 'true');
+    mobilePreviewToggle.textContent = 'Collapse';
+    return;
+  }
+
+  const collapsed = loadPreviewCollapsedPreference();
+  setPreviewCollapsed(collapsed);
 }
 
 function makeLink(label, href, color) {
@@ -126,6 +202,16 @@ function updateSignature() {
   output.value = signatureHtml;
 }
 
+function buildOutlookHtml(baseHtml) {
+  return `<!doctype html><html><head><meta charset="utf-8"></head><body><!--[if mso]><div><![endif]-->${baseHtml}<!--[if mso]></div><![endif]--></body></html>`;
+}
+
+function htmlToPlainText(html) {
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  return (container.textContent || container.innerText || '').trim();
+}
+
 async function uploadImage(file, targetInputName) {
   const uploadFormData = new FormData();
   uploadFormData.append('image', file);
@@ -154,10 +240,12 @@ async function uploadImage(file, targetInputName) {
 
   targetInput.value = result.publicUrl;
   updateSignature();
+  saveProgress();
   return result.publicUrl;
 }
 
 form.addEventListener('input', updateSignature);
+form.addEventListener('input', saveProgress);
 
 uploadButtons.forEach((button) => {
   button.addEventListener('click', async () => {
@@ -211,12 +299,47 @@ disconnectDriveButton.addEventListener('click', async () => {
   }
 });
 
+mobilePreviewToggle.addEventListener('click', () => {
+  const collapsed = !previewPanel.classList.contains('is-collapsed');
+  setPreviewCollapsed(collapsed);
+  savePreviewCollapsedPreference(collapsed);
+});
+
 copyButton.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(output.value);
     statusEl.textContent = 'Signature HTML copied to clipboard.';
   } catch (_error) {
     statusEl.textContent = 'Clipboard copy failed. Copy manually from the box.';
+  }
+});
+
+copyOutlookButton.addEventListener('click', async () => {
+  const baseHtml = output.value;
+  const outlookHtml = buildOutlookHtml(baseHtml);
+  const plainText = htmlToPlainText(baseHtml);
+
+  try {
+    if (!window.ClipboardItem || !navigator.clipboard?.write) {
+      await navigator.clipboard.writeText(outlookHtml);
+      statusEl.textContent = 'Outlook HTML copied as text fallback.';
+      return;
+    }
+
+    const item = new ClipboardItem({
+      'text/html': new Blob([outlookHtml], { type: 'text/html' }),
+      'text/plain': new Blob([plainText], { type: 'text/plain' })
+    });
+
+    await navigator.clipboard.write([item]);
+    statusEl.textContent = 'Copied for Outlook. Paste directly in Outlook signature editor.';
+  } catch (_error) {
+    try {
+      await navigator.clipboard.writeText(outlookHtml);
+      statusEl.textContent = 'Copied Outlook HTML as text fallback.';
+    } catch (_nestedError) {
+      statusEl.textContent = 'Outlook copy failed. Try Copy HTML or manual paste from output.';
+    }
   }
 });
 
@@ -250,7 +373,10 @@ function handleOauthResultInUrl() {
   window.history.replaceState({}, '', nextUrl);
 }
 
+restoreProgress();
 updateSignature();
 setDriveUiStatus(false);
 handleOauthResultInUrl();
 refreshDriveStatus();
+syncPreviewCollapseForViewport();
+window.addEventListener('resize', syncPreviewCollapseForViewport);
