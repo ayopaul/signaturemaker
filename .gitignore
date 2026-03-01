@@ -1,2 +1,4 @@
 node_modules/
 modules/
+.env
+.DS_Store

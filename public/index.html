@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Signature Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-bg"></div>
+    <main class="container">
+      <header class="header">
+        <div>
+          <h1>Email Signature Generator</h1>
+          <p class="subtext">
+            Build, preview, and export an HTML email signature with cloud-hosted avatar and logo images.
+          </p>
+        </div>
+      </header>
+
+      <section class="panel form-panel">
+        <h2>Profile</h2>
+        <form id="signature-form" class="form-grid">
+          <label>
+            Full name
+            <input name="fullName" value="Alex Morgan" required />
+          </label>
+          <label>
+            Job title
+            <input name="jobTitle" value="Head of Product" />
+          </label>
+          <label>
+            Company
+            <input name="company" value="Northwind Labs" />
+          </label>
+          <label>
+            Phone
+            <input name="phone" value="+1 (555) 019-9921" />
+          </label>
+          <label>
+            Email
+            <input name="email" value="alex@northwindlabs.com" />
+          </label>
+          <label>
+            Website
+            <input name="website" value="https://northwindlabs.com" />
+          </label>
+          <label class="wide">
+            Address
+            <input name="address" value="310 Montgomery St, San Francisco, CA" />
+          </label>
+
+          <div class="section-divider"></div>
+          <h3 class="section-title">Social Links</h3>
+          <label>
+            LinkedIn
+            <input name="linkedin" value="https://linkedin.com/in/alexmorgan" />
+          </label>
+          <label>
+            X / Twitter
+            <input name="twitter" value="https://x.com/alexmorgan" />
+          </label>
+          <label>
+            Instagram
+            <input name="instagram" value="https://instagram.com/alexmorgan" />
+          </label>
+          <label>
+            YouTube
+            <input name="youtube" value="https://youtube.com/@alexmorgan" />
+          </label>
+
+          <div class="section-divider"></div>
+          <h3 class="section-title">Branding</h3>
+          <label>
+            Accent color
+            <input type="color" name="accentColor" value="#2160ff" />
+          </label>
+          <label>
+            Avatar image URL
+            <input name="avatarUrl" placeholder="https://..." />
+          </label>
+          <label>
+            Logo image URL
+            <input name="logoUrl" placeholder="https://..." />
+          </label>
+
+          <div class="section-divider"></div>
+          <h3 class="section-title">Google Drive</h3>
+          <div class="upload-group wide">
+            <div class="upload-item drive-connect">
+              <div class="drive-head">
+                <label>Google Drive account</label>
+                <p id="drive-status" class="drive-status">Checking connection...</p>
+              </div>
+              <div class="drive-actions">
+                <button id="connect-drive" type="button">Connect Google Drive</button>
+                <button id="disconnect-drive" type="button">Disconnect</button>
+              </div>
+              <label>
+                Drive folder ID (optional)
+                <input
+                  name="driveFolderId"
+                  placeholder="If empty, uploads go to user's My Drive root"
+                />
+              </label>
+            </div>
+
+            <div class="section-divider upload-divider"></div>
+            <h3 class="upload-title">Uploads</h3>
+
+            <div class="upload-item">
+              <label for="avatarUpload">Upload avatar to Google Drive</label>
+              <input id="avatarUpload" type="file" accept="image/*" />
+              <button type="button" data-upload-target="avatarUrl">Upload avatar</button>
+            </div>
+            <div class="upload-item">
+              <label for="logoUpload">Upload logo to Google Drive</label>
+              <input id="logoUpload" type="file" accept="image/*" />
+              <button type="button" data-upload-target="logoUrl">Upload logo</button>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel preview-panel">
+        <div class="preview-head">
+          <h2>Preview</h2>
+          <div class="actions">
+            <button id="copy-html" type="button">Copy HTML</button>
+            <button id="download-html" type="button">Download HTML</button>
+          </div>
+        </div>
+
+        <div class="preview-card">
+          <div id="signature-preview"></div>
+        </div>
+
+        <label class="html-output-label" for="signature-html-output">Generated HTML</label>
+        <textarea id="signature-html-output" readonly></textarea>
+        <p id="status" class="status"></p>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
