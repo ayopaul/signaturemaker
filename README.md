@@ -1,30 +1,27 @@
-# Email Signature Generator
+# Sigar (Next.js)
 
-A web app for creating HTML email signatures with live preview, HTML export, and Google Drive image upload through each user's own Google account.
+Sigar is a free email signature generator built with Next.js (App Router).
+It includes Google Drive OAuth so users can upload images or pick existing Drive images for avatar/logo.
 
-## Features
+## Stack
 
-- Signature builder form with live preview
-- Copy HTML and download HTML output
-- Google Drive OAuth connect/disconnect per user
-- Avatar/logo uploads to connected user Drive
-- Optional custom Drive folder ID per upload
+- Next.js (React)
+- App Router API route handlers
+- Google Drive API (`googleapis`)
+- Vercel Analytics (`<Analytics />` in layout)
 
-## Setup
-
-1. Install dependencies:
+## Run
 
 ```bash
 npm install
+npm run dev
 ```
 
-2. Configure environment:
+Open [http://localhost:3000](http://localhost:3000)
 
-```bash
-cp .env.example .env
-```
+## Environment Variables
 
-Add your OAuth values to `.env`:
+Create `.env` from `.env.example`:
 
 ```env
 PORT=3000
@@ -33,20 +30,13 @@ GOOGLE_OAUTH_CLIENT_SECRET=...
 GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3000/api/google-drive/callback
 ```
 
-3. Run locally:
+## Google Cloud Setup
 
-```bash
-npm run dev
-```
-
-Open: [http://localhost:3000](http://localhost:3000)
-
-## Google Cloud Requirements
-
-- Enable the Google Drive API
-- Configure OAuth consent screen
-- Create OAuth client type: Web application
-- Add redirect URI: `http://localhost:3000/api/google-drive/callback`
+1. Enable Google Drive API
+2. Configure OAuth consent screen
+3. Create OAuth Client (Web application)
+4. Add redirect URI:
+   - `http://localhost:3000/api/google-drive/callback`
 
 ## API Routes
 
@@ -55,10 +45,12 @@ Open: [http://localhost:3000](http://localhost:3000)
 - `GET /api/google-drive/connect`
 - `GET /api/google-drive/callback`
 - `POST /api/google-drive/disconnect`
-- `POST /api/upload-image` (`image` file field, optional `driveFolderId`)
+- `GET /api/google-drive/images`
+- `POST /api/google-drive/select-image`
+- `POST /api/upload-image`
 
 ## Notes
 
-- Session/token storage is in-memory in this starter project.
-- Restarting server clears active Drive sessions.
-- For production, add secure token storage, auth, CSRF protection, and rate limiting.
+- Session/token storage is in-memory for this starter setup.
+- Restarting the Next server clears active Drive sessions.
+- For production, add persistent secure token storage and hardening.

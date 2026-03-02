@@ -8,6 +8,9 @@ const downloadButton = document.getElementById('download-html');
 const avatarUploadInput = document.getElementById('avatarUpload');
 const logoUploadInput = document.getElementById('logoUpload');
 const uploadButtons = document.querySelectorAll('[data-upload-target]');
+const pickerSelects = document.querySelectorAll('[data-picker-select]');
+const pickerRefreshButtons = document.querySelectorAll('[data-picker-refresh]');
+const pickerUseButtons = document.querySelectorAll('[data-picker-use]');
 const driveStatusEl = document.getElementById('drive-status');
 const connectDriveButton = document.getElementById('connect-drive');
 const disconnectDriveButton = document.getElementById('disconnect-drive');
@@ -17,6 +20,7 @@ const progressStorageKey = 'email_signature_progress_v1';
 const previewPanelStateKey = 'preview_panel_mobile_collapsed_v1';
 
 let driveConnected = false;
+let driveImageFiles = [];
 
 function escapeHtml(value = '') {
   return value
@@ -169,6 +173,88 @@ function renderSignatureHtml(data) {
 </table>`;
 }
 
+function getTargetInput(targetInputName) {
+  return form.querySelector(`input[name="${targetInputName}"]`);
+}
+
+function getPickerSelect(targetInputName) {
+  return document.querySelector(`[data-picker-select="${targetInputName}"]`);
+}
+
+function setTargetImageUrl(targetInputName, url) {
+  const targetInput = getTargetInput(targetInputName);
+  if (!targetInput) {
+    throw new Error(`Unknown target input: ${targetInputName}`);
+  }
+
+  targetInput.value = url;
+  updateSignature();
+  saveProgress();
+}
+
+function renderDriveImageOptions() {
+  pickerSelects.forEach((select) => {
+    const previousValue = select.value;
+    const options = [
+      '<option value="">Select a Drive image...</option>',
+      ...driveImageFiles.map((file) => `<option value="${file.id}">${escapeHtml(file.name || file.id)}</option>`)
+    ];
+
+    select.innerHTML = options.join('');
+
+    if (previousValue && driveImageFiles.some((file) => file.id === previousValue)) {
+      select.value = previousValue;
+    }
+  });
+}
+
+async function loadDriveImages() {
+  if (!driveConnected) {
+    driveImageFiles = [];
+    renderDriveImageOptions();
+    return;
+  }
+
+  const response = await fetch('/api/google-drive/images?limit=50');
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || 'Failed to load Drive images');
+  }
+
+  driveImageFiles = Array.isArray(result.files) ? result.files : [];
+  renderDriveImageOptions();
+}
+
+async function useSelectedDriveImage(targetInputName) {
+  const select = getPickerSelect(targetInputName);
+  if (!select) {
+    throw new Error(`Missing picker for target: ${targetInputName}`);
+  }
+
+  const fileId = String(select.value || '').trim();
+  if (!fileId) {
+    throw new Error('Pick a Drive image first.');
+  }
+
+  const response = await fetch('/api/google-drive/select-image', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ fileId })
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || 'Failed to use selected image');
+  }
+
+  setTargetImageUrl(targetInputName, result.publicUrl);
+  return result.publicUrl;
+}
+
 function setDriveUiStatus(connected, email = null) {
   driveConnected = connected;
   driveStatusEl.textContent = connected
@@ -188,8 +274,16 @@ async function refreshDriveStatus() {
     }
 
     setDriveUiStatus(result.connected, result.email);
+    if (result.connected) {
+      await loadDriveImages();
+    } else {
+      driveImageFiles = [];
+      renderDriveImageOptions();
+    }
   } catch (error) {
     setDriveUiStatus(false);
+    driveImageFiles = [];
+    renderDriveImageOptions();
     statusEl.textContent = error instanceof Error ? error.message : 'Failed to check Drive status';
   }
 }
@@ -232,15 +326,7 @@ async function uploadImage(file, targetInputName) {
     throw new Error(result.error || 'Upload failed');
   }
 
-  const targetInput = form.querySelector(`input[name="${targetInputName}"]`);
-
-  if (!targetInput) {
-    throw new Error(`Unknown target input: ${targetInputName}`);
-  }
-
-  targetInput.value = result.publicUrl;
-  updateSignature();
-  saveProgress();
+  setTargetImageUrl(targetInputName, result.publicUrl);
   return result.publicUrl;
 }
 
@@ -269,8 +355,52 @@ uploadButtons.forEach((button) => {
     try {
       const url = await uploadImage(file, target);
       statusEl.textContent = `Uploaded successfully: ${url}`;
+      await loadDriveImages();
     } catch (error) {
       statusEl.textContent = error instanceof Error ? error.message : 'Upload failed';
+    } finally {
+      button.disabled = false;
+    }
+  });
+});
+
+pickerRefreshButtons.forEach((button) => {
+  button.addEventListener('click', async () => {
+    if (!driveConnected) {
+      statusEl.textContent = 'Connect your Google Drive account before loading images.';
+      return;
+    }
+
+    button.disabled = true;
+    statusEl.textContent = 'Loading images from Google Drive...';
+    try {
+      await loadDriveImages();
+      statusEl.textContent = 'Drive images refreshed.';
+    } catch (error) {
+      statusEl.textContent = error instanceof Error ? error.message : 'Failed to refresh Drive images';
+    } finally {
+      button.disabled = false;
+    }
+  });
+});
+
+pickerUseButtons.forEach((button) => {
+  button.addEventListener('click', async () => {
+    if (!driveConnected) {
+      statusEl.textContent = 'Connect your Google Drive account before selecting images.';
+      return;
+    }
+
+    const target = button.getAttribute('data-picker-use');
+    button.disabled = true;
+    statusEl.textContent = 'Applying selected Drive image...';
+
+    try {
+      const publicUrl = await useSelectedDriveImage(target);
+      statusEl.textContent = `Applied image: ${publicUrl}`;
+      await loadDriveImages();
+    } catch (error) {
+      statusEl.textContent = error instanceof Error ? error.message : 'Failed to apply selected Drive image';
     } finally {
       button.disabled = false;
     }
@@ -293,6 +423,8 @@ disconnectDriveButton.addEventListener('click', async () => {
     }
 
     setDriveUiStatus(false);
+    driveImageFiles = [];
+    renderDriveImageOptions();
     statusEl.textContent = 'Google Drive disconnected.';
   } catch (error) {
     statusEl.textContent = error instanceof Error ? error.message : 'Failed to disconnect';
@@ -374,6 +506,7 @@ function handleOauthResultInUrl() {
 }
 
 restoreProgress();
+renderDriveImageOptions();
 updateSignature();
 setDriveUiStatus(false);
 handleOauthResultInUrl();
