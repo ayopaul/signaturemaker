@@ -14,6 +14,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <script
+          id="Cookiebot"
+          src="https://consent.cookiebot.com/uc.js"
+          data-cbid="e551b348-8918-4a94-be1c-f6f751ac25fc"
+          type="text/javascript"
+          async
+        />
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-BCNLP50H4K" />
         <script
           dangerouslySetInnerHTML={{
