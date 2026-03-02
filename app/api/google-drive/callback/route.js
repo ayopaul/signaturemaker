@@ -27,7 +27,8 @@ export async function GET(request) {
   }
 
   try {
-    const oauthClient = createOauthClient();
+    const redirectUri = `${request.nextUrl.origin}/api/google-drive/callback`;
+    const oauthClient = createOauthClient(redirectUri);
     const tokenResponse = await oauthClient.getToken(code);
     const nextTokens = tokenResponse.tokens;
 

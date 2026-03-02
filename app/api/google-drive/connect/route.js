@@ -8,7 +8,8 @@ export const runtime = 'nodejs';
 export function GET(request) {
   try {
     const sessionMeta = getOrCreateSession(request);
-    const oauthClient = createOauthClient();
+    const redirectUri = `${request.nextUrl.origin}/api/google-drive/callback`;
+    const oauthClient = createOauthClient(redirectUri);
     const state = crypto.randomBytes(16).toString('hex');
 
     sessionMeta.session.oauthState = state;
