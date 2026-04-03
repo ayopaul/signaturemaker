@@ -43,7 +43,7 @@ export async function GET(request) {
         modifiedTime: file.modifiedTime,
         thumbnailLink: file.thumbnailLink || null,
         webViewLink: file.webViewLink || null,
-        publicUrl: hasPublicRead ? `https://drive.google.com/uc?export=view&id=${file.id}` : null
+        publicUrl: hasPublicRead ? `https://lh3.googleusercontent.com/d/${file.id}` : null
       };
     });
 

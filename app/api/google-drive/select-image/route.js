@@ -54,7 +54,7 @@ export async function POST(request) {
       fields: 'id,name'
     });
 
-    const publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+    const publicUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
 
     const response = NextResponse.json({
       fileId,
