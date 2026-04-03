@@ -22,6 +22,11 @@ const previewPanelStateKey = 'preview_panel_mobile_collapsed_v1';
 let driveConnected = false;
 let driveImageFiles = [];
 
+function setStatus(message, isError = false) {
+  statusEl.textContent = message;
+  statusEl.classList.toggle('is-error', isError);
+}
+
 function escapeHtml(value = '') {
   return value
     .replaceAll('&', '&amp;')
@@ -284,7 +289,7 @@ async function refreshDriveStatus() {
     setDriveUiStatus(false);
     driveImageFiles = [];
     renderDriveImageOptions();
-    statusEl.textContent = error instanceof Error ? error.message : 'Failed to check Drive status';
+    setStatus(error instanceof Error ? error.message : 'Failed to check Drive status', true);
   }
 }
 
@@ -336,7 +341,7 @@ form.addEventListener('input', saveProgress);
 uploadButtons.forEach((button) => {
   button.addEventListener('click', async () => {
     if (!driveConnected) {
-      statusEl.textContent = 'Connect your Google Drive account before uploading images.';
+      setStatus('Connect your Google Drive account before uploading images.', true);
       return;
     }
 
@@ -344,20 +349,20 @@ uploadButtons.forEach((button) => {
     const input = target === 'avatarUrl' ? avatarUploadInput : logoUploadInput;
 
     if (!input.files?.[0]) {
-      statusEl.textContent = 'Select an image before upload.';
+      setStatus('Select an image before upload.', true);
       return;
     }
 
     const file = input.files[0];
     button.disabled = true;
-    statusEl.textContent = `Uploading ${file.name}...`;
+    setStatus(`Uploading ${file.name}...`);
 
     try {
       const url = await uploadImage(file, target);
-      statusEl.textContent = `Uploaded successfully: ${url}`;
+      setStatus(`Uploaded successfully: ${url}`);
       await loadDriveImages();
     } catch (error) {
-      statusEl.textContent = error instanceof Error ? error.message : 'Upload failed';
+      setStatus(error instanceof Error ? error.message : 'Upload failed', true);
     } finally {
       button.disabled = false;
     }
@@ -367,17 +372,17 @@ uploadButtons.forEach((button) => {
 pickerRefreshButtons.forEach((button) => {
   button.addEventListener('click', async () => {
     if (!driveConnected) {
-      statusEl.textContent = 'Connect your Google Drive account before loading images.';
+      setStatus('Connect your Google Drive account before loading images.', true);
       return;
     }
 
     button.disabled = true;
-    statusEl.textContent = 'Loading images from Google Drive...';
+    setStatus('Loading images from Google Drive...');
     try {
       await loadDriveImages();
-      statusEl.textContent = 'Drive images refreshed.';
+      setStatus('Drive images refreshed.');
     } catch (error) {
-      statusEl.textContent = error instanceof Error ? error.message : 'Failed to refresh Drive images';
+      setStatus(error instanceof Error ? error.message : 'Failed to refresh Drive images', true);
     } finally {
       button.disabled = false;
     }
@@ -387,20 +392,20 @@ pickerRefreshButtons.forEach((button) => {
 pickerUseButtons.forEach((button) => {
   button.addEventListener('click', async () => {
     if (!driveConnected) {
-      statusEl.textContent = 'Connect your Google Drive account before selecting images.';
+      setStatus('Connect your Google Drive account before selecting images.', true);
       return;
     }
 
     const target = button.getAttribute('data-picker-use');
     button.disabled = true;
-    statusEl.textContent = 'Applying selected Drive image...';
+    setStatus('Applying selected Drive image...');
 
     try {
       const publicUrl = await useSelectedDriveImage(target);
-      statusEl.textContent = `Applied image: ${publicUrl}`;
+      setStatus(`Applied image: ${publicUrl}`);
       await loadDriveImages();
     } catch (error) {
-      statusEl.textContent = error instanceof Error ? error.message : 'Failed to apply selected Drive image';
+      setStatus(error instanceof Error ? error.message : 'Failed to apply selected Drive image', true);
     } finally {
       button.disabled = false;
     }
@@ -425,9 +430,9 @@ disconnectDriveButton.addEventListener('click', async () => {
     setDriveUiStatus(false);
     driveImageFiles = [];
     renderDriveImageOptions();
-    statusEl.textContent = 'Google Drive disconnected.';
+    setStatus('Google Drive disconnected.');
   } catch (error) {
-    statusEl.textContent = error instanceof Error ? error.message : 'Failed to disconnect';
+    setStatus(error instanceof Error ? error.message : 'Failed to disconnect', true);
   }
 });
 
@@ -440,9 +445,9 @@ mobilePreviewToggle.addEventListener('click', () => {
 copyButton.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(output.value);
-    statusEl.textContent = 'Signature HTML copied to clipboard.';
+    setStatus('Signature HTML copied to clipboard.');
   } catch (_error) {
-    statusEl.textContent = 'Clipboard copy failed. Copy manually from the box.';
+    setStatus('Clipboard copy failed. Copy manually from the box.', true);
   }
 });
 
@@ -454,7 +459,7 @@ copyOutlookButton.addEventListener('click', async () => {
   try {
     if (!window.ClipboardItem || !navigator.clipboard?.write) {
       await navigator.clipboard.writeText(outlookHtml);
-      statusEl.textContent = 'Outlook HTML copied as text fallback.';
+      setStatus('Outlook HTML copied as text fallback.');
       return;
     }
 
@@ -464,13 +469,13 @@ copyOutlookButton.addEventListener('click', async () => {
     });
 
     await navigator.clipboard.write([item]);
-    statusEl.textContent = 'Copied for Outlook. Paste directly in Outlook signature editor.';
+    setStatus('Copied for Outlook. Paste directly in Outlook signature editor.');
   } catch (_error) {
     try {
       await navigator.clipboard.writeText(outlookHtml);
-      statusEl.textContent = 'Copied Outlook HTML as text fallback.';
+      setStatus('Copied Outlook HTML as text fallback.');
     } catch (_nestedError) {
-      statusEl.textContent = 'Outlook copy failed. Try Copy HTML or manual paste from output.';
+      setStatus('Outlook copy failed. Try Copy HTML or manual paste from output.', true);
     }
   }
 });
@@ -483,7 +488,7 @@ downloadButton.addEventListener('click', () => {
   a.download = 'email-signature.html';
   a.click();
   URL.revokeObjectURL(objectUrl);
-  statusEl.textContent = 'Downloaded email-signature.html';
+  setStatus('Downloaded email-signature.html');
 });
 
 function handleOauthResultInUrl() {
@@ -492,10 +497,10 @@ function handleOauthResultInUrl() {
   if (!driveState) return;
 
   if (driveState === 'connected') {
-    statusEl.textContent = 'Google Drive connected successfully.';
+    setStatus('Google Drive connected successfully.');
   } else if (driveState === 'error') {
     const message = params.get('message') || 'Google Drive connection failed.';
-    statusEl.textContent = `Google Drive error: ${message}`;
+    setStatus(`Google Drive error: ${message}`, true);
   }
 
   params.delete('drive');

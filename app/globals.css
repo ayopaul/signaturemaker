@@ -309,6 +309,10 @@ button:active {
   font-weight: 400;
 }
 
+.status.is-error {
+  color: #dc2626;
+}
+
 @media (min-width: 980px) {
   .container {
     grid-template-columns: 1fr 1fr;

@@ -51,7 +51,10 @@ export async function GET(request) {
     attachSessionCookie(response, sessionMeta);
     return response;
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to fetch images';
+    const raw = error instanceof Error ? error.message : 'Failed to fetch images';
+    const message = raw.includes('has not been used in project') || raw.includes('it is disabled')
+      ? 'Google Drive API is not enabled for this project. Enable it at console.cloud.google.com under APIs & Services.'
+      : raw;
     const response = NextResponse.json({ error: message }, { status: 500 });
     attachSessionCookie(response, sessionMeta);
     return response;

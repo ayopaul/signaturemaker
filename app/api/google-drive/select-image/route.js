@@ -65,7 +65,10 @@ export async function POST(request) {
     attachSessionCookie(response, sessionMeta);
     return response;
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to pick image';
+    const raw = error instanceof Error ? error.message : 'Failed to pick image';
+    const message = raw.includes('has not been used in project') || raw.includes('it is disabled')
+      ? 'Google Drive API is not enabled for this project. Enable it at console.cloud.google.com under APIs & Services.'
+      : raw;
     const response = NextResponse.json({ error: message }, { status: 500 });
     attachSessionCookie(response, sessionMeta);
     return response;
